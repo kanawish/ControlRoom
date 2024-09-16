@@ -48,6 +48,12 @@ android {
     }
 }
 
+/* Koin KSP is not really used for now.
+ksp {
+    arg("KOIN_CONFIG_CHECK","true")
+}
+*/
+
 dependencies {
     implementation(libs.accompanist.permissions)
 
@@ -57,6 +63,11 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.navigation.compose)
+
+    implementation("androidx.compose.material:material:1.7.1")
+    implementation("androidx.compose.material:material-navigation:1.7.0-beta01")
+
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -65,6 +76,14 @@ dependencies {
     implementation(libs.coil)
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
+
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+
+    // Koin KSP is not really used for now.
+//    ksp(libs.koin.ksp.compiler)
+//    implementation(libs.koin.annotations)
 
     implementation(libs.konfetti.compose)
 
