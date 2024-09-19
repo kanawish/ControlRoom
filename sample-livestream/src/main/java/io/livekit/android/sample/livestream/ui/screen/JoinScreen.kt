@@ -44,7 +44,7 @@ import com.github.ajalt.timberkt.Timber
 import io.livekit.android.room.track.CameraPosition
 import io.livekit.android.sample.livestream.model.AppModel
 import io.livekit.android.sample.livestream.model.MainNav
-import io.livekit.android.sample.livestream.model.RoomContainer
+import io.livekit.android.sample.livestream.model.RoomContainerRoute
 import io.livekit.android.sample.livestream.room.data.JoinStreamRequest
 import io.livekit.android.sample.livestream.room.data.JoinStreamResponse
 import io.livekit.android.sample.livestream.room.data.LivestreamApi
@@ -142,7 +142,7 @@ fun JoinScreen(
                             isHost = false,
                             initialCamPos = CameraPosition.FRONT
                         )
-                        mainNav.mainNavigate(RoomContainer)
+                        mainNav.mainNavigate(RoomContainerRoute)
                     }
                 } else {
                     Timber.e { "response failed!" }

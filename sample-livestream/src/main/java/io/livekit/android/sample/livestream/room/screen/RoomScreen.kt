@@ -48,15 +48,15 @@ import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.room.track.LocalVideoTrackOptions
 import io.livekit.android.room.track.Track
 import io.livekit.android.sample.livestream.model.AppModel
-import io.livekit.android.sample.livestream.model.InvitedToStage
-import io.livekit.android.sample.livestream.model.Join
+import io.livekit.android.sample.livestream.model.InvitedToStageRoute
+import io.livekit.android.sample.livestream.model.JoinRoute
 import io.livekit.android.sample.livestream.model.MainNav
-import io.livekit.android.sample.livestream.model.ParticipantList
+import io.livekit.android.sample.livestream.model.ParticipantListRoute
 import io.livekit.android.sample.livestream.R
 import io.livekit.android.sample.livestream.model.RoomNav
 import io.livekit.android.sample.livestream.model.RoomNavHost
-import io.livekit.android.sample.livestream.model.Start
-import io.livekit.android.sample.livestream.model.StreamOptions
+import io.livekit.android.sample.livestream.model.StartRoute
+import io.livekit.android.sample.livestream.model.StreamOptionsRoute
 import io.livekit.android.sample.livestream.room.data.DefaultLKOverrides
 import io.livekit.android.sample.livestream.room.data.DefaultRoomOptions
 import io.livekit.android.sample.livestream.room.state.rememberEnableCamera
@@ -142,7 +142,7 @@ fun RoomScreenContainer(
         },
         onDisconnected = {
             Toast.makeText(context, "Disconnected from livestream.", Toast.LENGTH_LONG).show()
-            mainNav.mainPopBackstack(if (isHost) Start else Join,false)
+            mainNav.mainPopBackstack(if (isHost) StartRoute else JoinRoute,false)
         },
         onError = { _, error ->
             if (error is RoomException.ConnectException) {
@@ -151,11 +151,10 @@ fun RoomScreenContainer(
                     "Error while joining the stream. Please check the code and try again.",
                     Toast.LENGTH_LONG
                 ).show()
-                mainNav.mainPopBackstack(if (isHost) Start else Join,false)
+                mainNav.mainPopBackstack(if (isHost) StartRoute else JoinRoute,false)
             }
         }
     ) { room ->
-
         // Handle camera position changes
         LaunchedEffect(cameraPosition.value) {
             val track = room.localParticipant.getTrackPublication(Track.Source.CAMERA)
@@ -178,7 +177,7 @@ fun RoomScreenContainer(
             }
         }
 
-        RoomNavHost(cameraPosition, showOptionsDialogOnce, roomNav)
+        RoomNavHost(cameraPosition, showOptionsDialogOnce)
     }
 }
 
@@ -205,7 +204,7 @@ fun RoomScreen(
     if (showOptionsDialogOnce.value) {
         Timber.d("RoomScreen -> showOptionsDialogOnce")
         showOptionsDialogOnce.value = false
-        roomNav.roomNavigate(StreamOptions)
+        roomNav.roomNavigate(StreamOptionsRoute)
     }
 
     HandleInvitedToStage()
@@ -285,7 +284,7 @@ fun RoomScreen(
             onChatSend = { message ->
                 scope.launch { chat.send(message) }
             },
-            onOptionsClick = { roomNav.roomNavigate(StreamOptions) },
+            onOptionsClick = { roomNav.roomNavigate(StreamOptionsRoute) },
             chatEnabled = roomMetadata.enableChat,
             modifier = Modifier
                 .constrainAs(chatBar) {
@@ -302,7 +301,7 @@ fun RoomScreen(
             participantCount = rememberParticipants().size,
             showParticipantIndicator = hasRaisedHands,
             onFlipButtonClick = { cameraPosition.value = cameraPosition.value.flipped() },
-            onParticipantButtonClick = { roomNav.roomNavigate(ParticipantList) },
+            onParticipantButtonClick = { roomNav.roomNavigate(ParticipantListRoute) },
             modifier = Modifier.constrainAs(viewerButton) {
                 width = Dimension.fillToConstraints
                 height = Dimension.wrapContent
@@ -341,6 +340,6 @@ fun HandleInvitedToStage(
     }
     if (showInvitedDialogOnce && localParticipantMetadata.invitedToStage) {
         showInvitedDialogOnce = false
-        roomNav.roomNavigate(InvitedToStage)
+        roomNav.roomNavigate(InvitedToStageRoute)
     }
 }

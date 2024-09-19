@@ -37,10 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import io.livekit.android.sample.livestream.model.Join
+import io.livekit.android.sample.livestream.model.JoinRoute
 import io.livekit.android.sample.livestream.model.MainNav
 import io.livekit.android.sample.livestream.R
-import io.livekit.android.sample.livestream.model.Start
+import io.livekit.android.sample.livestream.model.StartRoute
 import io.livekit.android.sample.livestream.ui.control.LargeTextButton
 import io.livekit.android.sample.livestream.ui.theme.Dimens
 import org.koin.compose.koinInject
@@ -102,7 +102,7 @@ fun HomeScreen(mainNav: MainNav = koinInject()) {
         LargeTextButton(
             text = "Start a livestream",
             colors = startButtonColors,
-            onClick = { mainNav.mainNavigate(Start) },
+            onClick = { mainNav.mainNavigate(StartRoute) },
             modifier = Modifier.constrainAs(startButton) {
                 width = Dimension.fillToConstraints
                 height = Dimension.value(Dimens.buttonHeight)
@@ -119,7 +119,7 @@ fun HomeScreen(mainNav: MainNav = koinInject()) {
         LargeTextButton(
             text = "Join a livestream",
             colors = joinButtonColors,
-            onClick = { mainNav.mainNavigate(Join) },
+            onClick = { mainNav.mainNavigate(JoinRoute) },
             modifier = Modifier.constrainAs(joinButton) {
                 width = Dimension.fillToConstraints
                 height = Dimension.value(Dimens.buttonHeight)

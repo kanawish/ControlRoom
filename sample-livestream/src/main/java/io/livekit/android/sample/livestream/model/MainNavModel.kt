@@ -94,22 +94,22 @@ class MainNavModel(scope: CoroutineScope) : MainNav, CoroutineScope by scope {
 }
 
 // Application Routes
-@Serializable data object Home: TypedRoute
-@Serializable data object Join: TypedRoute
-@Serializable data object Start: TypedRoute
-@Serializable data object RoomContainer: TypedRoute
+@Serializable data object HomeRoute: TypedRoute
+@Serializable data object JoinRoute: TypedRoute
+@Serializable data object StartRoute: TypedRoute
+@Serializable data object RoomContainerRoute: TypedRoute
 
 @Composable
 fun MainNavHost(mainNav: MainNav = koinInject()) {
     val navHostController: NavHostController = rememberNavController()
     NavHost(
         navController = navHostController,
-        startDestination = Home
+        startDestination = HomeRoute
     ) {
-        composable<Home> { HomeScreen() }
-        composable<Join> { JoinScreen() }
-        composable<Start> { StartScreen() }
-        composable<RoomContainer> { RoomScreenContainer() }
+        composable<HomeRoute> { HomeScreen() }
+        composable<JoinRoute> { JoinScreen() }
+        composable<StartRoute> { StartScreen() }
+        composable<RoomContainerRoute> { RoomScreenContainer() }
     }
 
     LaunchedEffect(Unit) {

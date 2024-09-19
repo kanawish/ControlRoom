@@ -60,7 +60,7 @@ import io.livekit.android.room.participant.Participant
 import io.livekit.android.room.track.CameraPosition
 import io.livekit.android.sample.livestream.model.AppModel
 import io.livekit.android.sample.livestream.model.MainNav
-import io.livekit.android.sample.livestream.model.RoomContainer
+import io.livekit.android.sample.livestream.model.RoomContainerRoute
 import io.livekit.android.sample.livestream.room.data.CreateStreamRequest
 import io.livekit.android.sample.livestream.room.data.CreateStreamResponse
 import io.livekit.android.sample.livestream.room.data.LivestreamApi
@@ -242,7 +242,7 @@ fun StartScreen(
                             isHost = true,
                             initialCamPos = cameraPosition
                         )
-                        mainNav.mainNavigate(RoomContainer)
+                        mainNav.mainNavigate(RoomContainerRoute)
                     }
                 } else {
                     Timber.e { "response failed!" }

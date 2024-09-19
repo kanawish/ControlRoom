@@ -60,7 +60,8 @@ interface AuthenticatedLivestreamApi {
 }
 
 @Serializable
-data class CreateStreamRequest(
+data class CreateStreamRequest( // TODO: Add custom room name here.
+    val roomName: String? = null,
     val metadata: RoomMetadata,
 )
 

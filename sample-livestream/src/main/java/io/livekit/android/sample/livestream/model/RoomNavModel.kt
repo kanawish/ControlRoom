@@ -10,14 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NamedNavArgument
-import androidx.navigation.NavArgument
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import androidx.navigation.plusAssign
 import com.github.ajalt.timberkt.Timber
 import io.livekit.android.room.participant.Participant
@@ -36,6 +32,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.koin.compose.koinInject
 
 interface RoomNav {
     val roomNavEvents: SharedFlow<NavEvent>
@@ -67,7 +64,7 @@ class RoomNavModel(scope: CoroutineScope): RoomNav, CoroutineScope by scope {
             Timber.d { "roomNavigateParticipantInfo($participantSid)" }
             // FIXME -
             roomNavEvent {
-                navigate(ParticipantInfo.name+"/${participantSid.value}")
+                navigate(ParticipantInfoRoute.name+"/${participantSid.value}")
             }
         }
     }
@@ -81,17 +78,17 @@ class RoomNavModel(scope: CoroutineScope): RoomNav, CoroutineScope by scope {
 }
 
 @Serializable
-data object Room: TypedRoute
-data object InvitedToStage: NamedRoute
-data object ParticipantInfo: NamedRoute
-data object ParticipantList: NamedRoute
-data object StreamOptions: NamedRoute
+data object RoomRoute: TypedRoute
+data object InvitedToStageRoute: NamedRoute
+data object ParticipantInfoRoute: NamedRoute
+data object ParticipantListRoute: NamedRoute
+data object StreamOptionsRoute: NamedRoute
 
 @Composable
 fun RoomNavHost(
     cameraPosition: MutableState<CameraPosition>,
     showOptionsDialogOnce: MutableState<Boolean>,
-    roomNav: RoomNav
+    roomNav: RoomNav = koinInject()
 ) {
     val roomNavHostController: NavHostController = rememberNavController()
     val bottomSheetNavigator: BottomSheetNavigator = rememberBottomSheetNavigator()
@@ -103,23 +100,23 @@ fun RoomNavHost(
     ) {
         NavHost(
             navController = roomNavHostController,
-            startDestination = Room
+            startDestination = RoomRoute
         ) {
-            composable<Room> {
+            composable<RoomRoute> {
                 // Pass in 'view state' that belongs to container.
                 RoomScreen(
                     cameraPosition = cameraPosition,
                     showOptionsDialogOnce = showOptionsDialogOnce
                 )
             }
-            bottomSheet(StreamOptions.name) { StreamOptionsScreen() }
-            bottomSheet(ParticipantList.name) { ParticipantListScreen() }
+            bottomSheet(StreamOptionsRoute.name) { StreamOptionsScreen() }
+            bottomSheet(ParticipantListRoute.name) { ParticipantListScreen() }
             // FIXME -
-            bottomSheet(ParticipantInfo.name + "/{sid}") {
+            bottomSheet(ParticipantInfoRoute.name + "/{sid}") {
                 val sid = it.arguments?.getString("sid")
                 ParticipantInfoScreen(participantSid = sid)
             }
-            bottomSheet(InvitedToStage.name) { InvitedToStageScreen() }
+            bottomSheet(InvitedToStageRoute.name) { InvitedToStageScreen() }
         }
     }
 
