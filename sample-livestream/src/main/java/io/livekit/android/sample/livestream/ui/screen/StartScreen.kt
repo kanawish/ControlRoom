@@ -241,7 +241,7 @@ fun StartScreen(
                             connectionDetails = response.connectionDetails,
                             isHost = true,
                             initialCamPos = cameraPosition
-                        )
+                        ) // NOTE: After we successfully authenticated...
                         mainNav.mainNavigate(RoomContainerRoute)
                     }
                 } else {
