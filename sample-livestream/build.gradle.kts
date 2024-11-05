@@ -65,9 +65,11 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
 
-    implementation("androidx.compose.material:material:1.7.1")
+    implementation("androidx.compose.material:material:1.7.5")
     implementation("androidx.compose.material:material-navigation:1.7.0-beta01")
 
+    implementation(libs.material.icons.core)
+    implementation(libs.material.icons.extended)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -94,6 +96,8 @@ dependencies {
     implementation(libs.retrofit2.kotlinx.serialization.converter)
     implementation(libs.square.okhttp3.loggingInterceptor)
     implementation(libs.square.retrofit)
+
+    implementation(libs.usbSerialForAndroid)
 
     implementation(libs.timberkt)
 

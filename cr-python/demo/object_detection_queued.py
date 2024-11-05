@@ -9,7 +9,7 @@ from livekit.rtc import VideoFrameEvent
 from mediapipe.tasks.python.vision.object_detector import ObjectDetector
 
 from control_room.toolkit import load_config, first_track_queued_frame_looper, loop_on
-from control_room.toolkit_object_detect import visualize, perf, default_queued_options
+from control_room.toolkit_object_detect import visualize, draw_perf, default_queued_options
 
 logging.basicConfig(level=logging.INFO)
 
@@ -35,7 +35,7 @@ async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.Vi
     end_time = time.perf_counter()
 
     visualize(numpy_frame, results)
-    perf(numpy_frame, 0, end_time - start_time)
+    draw_perf(numpy_frame, 0, end_time - start_time)
     frame = rtc.VideoFrame(mp_image.width, mp_image.height, rtc.VideoBufferType.RGB24, numpy_frame.data)
     output_source.capture_frame(frame)
 

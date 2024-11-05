@@ -61,6 +61,7 @@ interface AuthenticatedLivestreamApi {
 
 @Serializable
 data class CreateStreamRequest( // TODO: Add custom room name here.
+    @SerialName("room_name") // FIXME: Propose a patch to LiveKit.
     val roomName: String? = null,
     val metadata: RoomMetadata,
 )

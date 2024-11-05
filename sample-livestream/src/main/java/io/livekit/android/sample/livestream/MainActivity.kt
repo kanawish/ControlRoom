@@ -16,18 +16,27 @@
 
 package io.livekit.android.sample.livestream
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.view.InputDevice
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Surface
+import io.livekit.android.sample.livestream.model.JoystickViewModel
 import io.livekit.android.sample.livestream.model.MainNavHost
 import io.livekit.android.sample.livestream.ui.theme.AppTheme
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
 
+    private val joystickViewModel: JoystickViewModel by viewModel()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        joystickViewModel.name = "🎩"
+        // TODO: Make this 'drone/gamepad specific' somehow.
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         setContent {
             AppTheme {
                 Surface {
@@ -37,4 +46,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
+            event.action == MotionEvent.ACTION_MOVE) {
+            // Process joystick events
+            val xAxis = event.getAxisValue(MotionEvent.AXIS_X)
+            val yAxis = event.getAxisValue(MotionEvent.AXIS_Y)
+            val zAxis = event.getAxisValue(MotionEvent.AXIS_Z)
+            val rzAxis = event.getAxisValue(MotionEvent.AXIS_RZ)
+
+            joystickViewModel.publish(event)
+
+            // Handle the joystick input here
+            return true
+        }
+        return super.onGenericMotionEvent(event)
+    }
 }

@@ -16,6 +16,7 @@
 
 package io.livekit.android.sample.livestream.ui.screen
 
+import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -69,7 +71,7 @@ fun JoinScreen(
         mutableStateOf(TextFieldValue(preferencesManager.getUsername()))
     }
     var roomName by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(TextFieldValue(""))
+        mutableStateOf(TextFieldValue("drone")) // todo: make this configurable or something.
     }
 
     ConstraintLayout(
@@ -77,6 +79,9 @@ fun JoinScreen(
             .padding(Dimens.spacer)
             .fillMaxSize()
     ) {
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
         val (content, joinButton) = createRefs()
         Column(modifier = Modifier.constrainAs(content) {
             width = Dimension.fillToConstraints
@@ -96,7 +101,7 @@ fun JoinScreen(
                 fontSize = 34.sp
             )
 
-            Spacer(47.dp)
+            if(isLandscape) Spacer(12.dp) else Spacer(47.dp)
 
             OutlinedTextField(
                 value = userName,
@@ -106,7 +111,7 @@ fun JoinScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(40.dp)
+            if(isLandscape) Spacer(8.dp) else Spacer(40.dp)
 
             OutlinedTextField(
                 value = roomName,

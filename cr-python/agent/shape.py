@@ -1,15 +1,11 @@
-import asyncio
 import logging
-import os
-from signal import SIGINT, SIGTERM
-from typing import Optional, List
 
 import cv2
 import numpy as np
-from livekit import rtc, api
+from livekit import rtc
 from livekit.rtc import VideoFrame, VideoFrameEvent
 
-from control_room.toolkit import load_config, log_room_activity, loop_on, first_track_queued_frame_looper
+from control_room.toolkit import load_config, loop_on, first_track_queued_frame_looper
 
 
 # Function to detect shape
@@ -76,6 +72,7 @@ async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.Vi
 
     cv2.waitKey(1)
 
+
 # TODO: Get rid of top level preview stuff.
 logging.basicConfig(level=logging.INFO)
 loaded_config = load_config()
@@ -90,6 +87,7 @@ if __name__ == "__main__":
             lk_id="foo",
             lk_name="foobar",
             handle_frame=handle_frame_event)
+
 
     loop_on(main)
     cv2.destroyAllWindows()

@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeMute
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -59,14 +61,16 @@ import io.livekit.android.sample.livestream.ui.theme.LKTextStyle
 @Composable
 fun RoomControls(
     showFlipButton: Boolean,
+    audioEnabled:Boolean,
     participantCount: Int,
     showParticipantIndicator: Boolean,
     onFlipButtonClick: () -> Unit,
     onParticipantButtonClick: () -> Unit,
+    onMuteButtonClick:()->Unit,
     modifier: Modifier = Modifier,
 ) {
     ConstraintLayout(modifier = modifier) {
-        val (flipButton, liveButton, participantCountButton) = createRefs()
+        val (flipButton, muteButton, liveButton, participantCountButton) = createRefs()
 
         if (showFlipButton) {
             ControlButton(
@@ -83,6 +87,21 @@ fun RoomControls(
                     modifier = Modifier.size(16.dp)
                 )
             }
+        }
+
+        ControlButton(
+            onClick = onMuteButtonClick,
+            modifier = Modifier.constrainAs(muteButton) {
+                width = Dimension.value(43.dp)
+                start.linkTo(flipButton.end, 32.dp)
+                top.linkTo(parent.top)
+            }
+        ) {
+            Icon(
+                imageVector = if(!audioEnabled) Icons.AutoMirrored.Default.VolumeMute else Icons.AutoMirrored.Default.VolumeUp,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
         }
 
         ParticipantCountButton(

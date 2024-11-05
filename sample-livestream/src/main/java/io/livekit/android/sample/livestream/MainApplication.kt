@@ -20,15 +20,23 @@ import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.decode.SvgDecoder
-import com.github.ajalt.timberkt.Timber
 import io.livekit.android.LiveKit
 import io.livekit.android.sample.livestream.di.initKoin
+import io.livekit.android.sample.livestream.model.UsbSerialModel
 import io.livekit.android.util.LoggingLevel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
+import timber.log.Timber
 import timber.log.Timber.DebugTree
 
 class MainApplication : Application(), ImageLoaderFactory {
+    private val test:UsbSerialModel by inject()
+    private val scope:CoroutineScope by inject()
+
     override fun onCreate() {
         super.onCreate()
         Timber.plant(DebugTree())
@@ -39,6 +47,18 @@ class MainApplication : Application(), ImageLoaderFactory {
         initKoin {
             androidLogger()
             androidContext(this@MainApplication)
+        }
+
+        scope.launch {
+            Timber.d("Woot.")
+            test.state.collectLatest { state ->
+                when(state) {
+                    is UsbSerialModel.State.Closed -> Timber.d("closed")
+                    is UsbSerialModel.State.Error -> Timber.d("error ${state.msg}")
+                    UsbSerialModel.State.Init -> Timber.d("init...")
+                    is UsbSerialModel.State.Open -> Timber.d("open pn: ${state.port.portNumber}")
+                }
+            }
         }
 
     }

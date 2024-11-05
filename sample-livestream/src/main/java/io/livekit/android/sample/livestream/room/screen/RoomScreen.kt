@@ -46,6 +46,7 @@ import io.livekit.android.room.RoomException
 import io.livekit.android.room.track.CameraPosition
 import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.room.track.LocalVideoTrackOptions
+import io.livekit.android.room.track.RemoteAudioTrack
 import io.livekit.android.room.track.Track
 import io.livekit.android.sample.livestream.model.AppModel
 import io.livekit.android.sample.livestream.model.InvitedToStageRoute
@@ -72,8 +73,10 @@ import io.livekit.android.sample.livestream.room.ui.ChatLog
 import io.livekit.android.sample.livestream.room.ui.ChatWidgetMessage
 import io.livekit.android.sample.livestream.room.ui.ConfettiState
 import io.livekit.android.sample.livestream.room.ui.ParticipantGrid
+import io.livekit.android.sample.livestream.room.ui.ReceiveJoystick
 import io.livekit.android.sample.livestream.room.ui.RoomConfettiView
 import io.livekit.android.sample.livestream.room.ui.RoomControls
+import io.livekit.android.sample.livestream.room.ui.SendJoystick
 import io.livekit.android.sample.livestream.ui.control.LoadingDialog
 import io.livekit.android.sample.livestream.util.KeepScreenOn
 import io.livekit.android.util.flow
@@ -197,6 +200,17 @@ fun RoomScreen(
         return
     }
 
+    val room = RoomLocal.current
+    var isOutputAudioEnabled by remember { mutableStateOf(true) }
+    fun toggleOutputSound() {
+        isOutputAudioEnabled = !isOutputAudioEnabled
+        room.remoteParticipants.forEach { (key,participant) ->
+            participant.audioTrackPublications.forEach { (pub,track) ->
+                (track as? RemoteAudioTrack)?.rtcTrack?.setEnabled(isOutputAudioEnabled)
+            }
+        }
+    }
+
     val roomMetadata = rememberRoomMetadata()
     val chat = rememberChat()
     val scope = rememberCoroutineScope()
@@ -208,6 +222,12 @@ fun RoomScreen(
     }
 
     HandleInvitedToStage()
+
+    if(isHost) {
+        ReceiveJoystick(RoomLocal.current)
+    } else {
+        SendJoystick(RoomLocal.current)
+    }
 
     ConstraintLayout(
         modifier = Modifier
@@ -298,10 +318,12 @@ fun RoomScreen(
 
         RoomControls(
             showFlipButton = isHost,
+            audioEnabled = isOutputAudioEnabled,
             participantCount = rememberParticipants().size,
             showParticipantIndicator = hasRaisedHands,
             onFlipButtonClick = { cameraPosition.value = cameraPosition.value.flipped() },
             onParticipantButtonClick = { roomNav.roomNavigate(ParticipantListRoute) },
+            onMuteButtonClick = { toggleOutputSound() } ,
             modifier = Modifier.constrainAs(viewerButton) {
                 width = Dimension.fillToConstraints
                 height = Dimension.wrapContent

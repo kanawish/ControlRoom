@@ -22,7 +22,7 @@ Deactivate the virtual environment when done.
 
 `deactivate`
 
-If you need to update the requirements file from your manually modified environment, do so with the following command.
+If you modify your virtual environment dependencies and want to save (and eventually publish) these changes, you can do so with the following command.
 
 `pip freeze > requirements.txt`
 

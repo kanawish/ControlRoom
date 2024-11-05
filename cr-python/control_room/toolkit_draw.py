@@ -1,9 +1,13 @@
 import asyncio
 import colorsys
-
 import cv2
 import numpy as np
 from livekit import rtc
+from livekit.rtc import VideoFrame
+from livekit.rtc import VideoFrameEvent
+import time
+
+from control_room.toolkit_object_detect import draw_perf_bkg
 
 
 async def draw_color_cycle(output_source: rtc.VideoSource, width, height):
@@ -46,3 +50,26 @@ def draw_img_rect_info(win_name: str, bgr_image):
     line_type = cv2.LINE_AA
     # Draw the text on the image
     cv2.putText(bgr_image, text, org, font_face, font_scale, color, thickness, line_type)
+
+def draw_foo(
+        frame_event: VideoFrameEvent,
+        output_source: rtc.VideoSource,
+):
+    buffer: VideoFrame = frame_event.frame
+    np_frame = np.frombuffer(buffer.data, dtype=np.uint8)
+    np_frame = np_frame.reshape((buffer.height, buffer.width, 3))
+
+    start_time = time.perf_counter()
+
+    # TODO: something...
+
+    end_time = time.perf_counter()
+    from control_room.toolkit_object_detect import draw_perf
+    draw_perf_bkg(np_frame, 0, end_time - start_time)
+    frame = rtc.VideoFrame(
+        # 640, 480,
+        buffer.width, buffer.height,
+        rtc.VideoBufferType.RGB24,
+        np_frame.data
+    )
+    output_source.capture_frame(frame)

@@ -128,13 +128,11 @@ fun StartScreen(
             BackButton {
                 mainNav.mainNavigateUp()
             }
-
             Text(
                 text = "Start Livestream",
                 fontWeight = FontWeight.W700,
                 fontSize = 34.sp
             )
-
             Box(modifier = Modifier.weight(1f)) {
                 if (canEnableVideo) {
                     CameraPreview(
@@ -144,7 +142,6 @@ fun StartScreen(
                             .fillMaxSize()
                             .clip(RoundedCornerShape(8.dp))
                     )
-
                     Row {
                         Spacer(10.dp)
                         ControlButton(
@@ -168,18 +165,14 @@ fun StartScreen(
                     )
                 }
             }
-
             Spacer(Dimens.spacer)
-
             Text(
                 text = "DETAILS",
                 fontWeight = FontWeight.W700,
                 fontSize = 11.sp,
                 letterSpacing = 0.05.em
             )
-
             Spacer(4.dp)
-
             OutlinedTextField(
                 value = userName,
                 onValueChange = { userName = it },
@@ -187,29 +180,24 @@ fun StartScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
-
             Spacer(Dimens.spacer)
-
             Text(
                 text = "OPTIONS",
                 fontWeight = FontWeight.W700,
                 fontSize = 11.sp,
                 letterSpacing = 0.05.em
             )
-
             Spacer(8.dp)
             SwitchButton(
                 text = "Enable chat",
                 checked = chatEnabled,
                 onCheckedChanged = { chatEnabled = it }
             )
-
             SwitchButton(
                 text = "Viewers can request to join",
                 checked = viewerJoinRequestEnabled,
                 onCheckedChanged = { viewerJoinRequestEnabled = it }
             )
-
             Spacer(8.dp)
         }
 
@@ -223,6 +211,7 @@ fun StartScreen(
                 try {
                     response = livestreamApi.createStream(
                         CreateStreamRequest(
+                            roomName = "drone", // todo: make this configurable of course.
                             metadata = RoomMetadata(
                                 creatorIdentity = Participant.Identity(userName.text),
                                 enableChat = chatEnabled,

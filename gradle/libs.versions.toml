@@ -158,6 +158,7 @@ livekit-android-compose-components = { module = "io.livekit:livekit-android-comp
 
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
+material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 
 opencv-contrib = { module = "com.quickbirdstudios:opencv-contrib", version.ref = "opencvContrib" }

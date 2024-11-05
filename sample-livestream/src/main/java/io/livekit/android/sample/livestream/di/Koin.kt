@@ -1,12 +1,17 @@
 package io.livekit.android.sample.livestream.di
 
+import android.content.Context
+import android.hardware.usb.UsbManager
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import io.livekit.android.sample.livestream.model.AppModel
 import io.livekit.android.sample.livestream.model.MainNav
 import io.livekit.android.sample.livestream.model.RoomNav
 import io.livekit.android.sample.livestream.ServerInfo
+import io.livekit.android.sample.livestream.model.JoystickModel
+import io.livekit.android.sample.livestream.model.JoystickViewModel
 import io.livekit.android.sample.livestream.model.MainNavModel
 import io.livekit.android.sample.livestream.model.RoomNavModel
+import io.livekit.android.sample.livestream.model.UsbSerialModel
 import io.livekit.android.sample.livestream.room.data.LKJson
 import io.livekit.android.sample.livestream.room.data.LivestreamApi
 import io.livekit.android.sample.livestream.util.PreferencesManager
@@ -16,11 +21,13 @@ import kotlinx.coroutines.SupervisorJob
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import retrofit2.Retrofit
+
 
 fun initKoin(enableNetworkLogs: Boolean = false, appDeclaration: KoinAppDeclaration = {}) =
     startKoin {
@@ -36,8 +43,19 @@ fun appModule() = module {
     single<MainNav> { MainNavModel(get()) }
     single<RoomNav> { RoomNavModel(get()) }
 
+    viewModelOf(::JoystickViewModel)
+
     singleOf(::AppModel)
     singleOf(::PreferencesManager)
+    singleOf(::JoystickModel)
+    singleOf(::UsbSerialModel)
+
+    fun provideUsbManager(context: Context): UsbManager =
+        context.getSystemService(Context.USB_SERVICE) as UsbManager
+
+    single {
+        provideUsbManager(get())
+    }
 
     single<OkHttpClient> {
         OkHttpClient.Builder()

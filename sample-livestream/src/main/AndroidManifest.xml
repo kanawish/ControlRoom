@@ -10,7 +10,8 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
-
+    <uses-permission android:name="android.permission.USB_PERMISSION" />
+    
     <application
         android:name=".MainApplication"
         android:allowBackup="true"
@@ -20,6 +21,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:testOnly="false"
+
         android:theme="@style/Theme.Componentsandroid">
         <activity
             android:name=".MainActivity"
@@ -27,9 +29,12 @@
             android:theme="@style/Theme.Componentsandroid">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/device_filter" />
         </activity>
     </application>
 
