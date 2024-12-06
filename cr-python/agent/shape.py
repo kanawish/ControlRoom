@@ -47,11 +47,12 @@ async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.Vi
     src_image = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
 
     gray = cv2.cvtColor(src_image, cv2.COLOR_BGR2GRAY)
-    cv2.imshow(windows[0], gray)
+    # cv2.imshow(windows[0], gray)
     blurred = cv2.GaussianBlur(gray, (7, 7), 0)
-    cv2.imshow(windows[1], blurred)
+    # blurred = cv2.GaussianBlur(gray, (65, 65), 0) # increased kernel
+    # cv2.imshow(windows[1], blurred)
     _, thresh = cv2.threshold(blurred, 120, 255, cv2.THRESH_BINARY_INV)
-    cv2.imshow(windows[2], thresh)
+    # cv2.imshow(windows[2], thresh)
 
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -60,13 +61,17 @@ async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.Vi
     for contour in contours:
         cv2.drawContours(dest_image, [contour], -1, (0, 255, 0), 2)
         # cv2.putText(dest_image, shape, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        cv2.imshow(windows[4], dest_image)
+        # cv2.imshow(windows[4], dest_image)
 
     frame = rtc.VideoFrame(
         buffer.width,
         buffer.height,
         rtc.VideoBufferType.RGB24,
-        cv2.cvtColor(dest_image, cv2.COLOR_BGR2RGB).data
+        # TODO: Demo the different filters.
+        # cv2.cvtColor(gray, cv2.COLOR_BGR2RGB).data
+        # cv2.cvtColor(blurred, cv2.COLOR_BGR2RGB).data
+        cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB).data
+        # cv2.cvtColor(dest_image, cv2.COLOR_BGR2RGB).data
     )
     output_source.capture_frame(frame)
 
@@ -77,8 +82,8 @@ async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.Vi
 logging.basicConfig(level=logging.INFO)
 loaded_config = load_config()
 
-windows = create_windows(5)
-cv2.startWindowThread()
+# windows = create_windows(5)
+# cv2.startWindowThread()
 
 if __name__ == "__main__":
     async def main(room: rtc.Room):
@@ -90,4 +95,4 @@ if __name__ == "__main__":
 
 
     loop_on(main)
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()

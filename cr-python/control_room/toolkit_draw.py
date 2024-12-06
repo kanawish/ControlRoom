@@ -1,13 +1,21 @@
+from collections import deque
+
+from control_room.toolkit_object_detect import draw_perf_bkg
+
+from livekit import rtc
+from livekit.rtc import VideoFrame
+from livekit.rtc import VideoFrameEvent
+
+from numpy import ndarray, dtype, unsignedinteger
+
+from typing import Any
+from typing import Callable
+
 import asyncio
 import colorsys
 import cv2
 import numpy as np
-from livekit import rtc
-from livekit.rtc import VideoFrame
-from livekit.rtc import VideoFrameEvent
 import time
-
-from control_room.toolkit_object_detect import draw_perf_bkg
 
 
 async def draw_color_cycle(output_source: rtc.VideoSource, width, height):
@@ -51,25 +59,55 @@ def draw_img_rect_info(win_name: str, bgr_image):
     # Draw the text on the image
     cv2.putText(bgr_image, text, org, font_face, font_scale, color, thickness, line_type)
 
-def draw_foo(
+
+# Initialize a deque to store timestamps of the last few frames
+def draw_red_dot(image: np.ndarray) -> np.ndarray:
+    # Define the position and color of the dot
+    position = (10, 10)  # Top-left corner
+    color = (255, 0, 0)  # Red color in BGR
+    radius = 5
+    thickness = -1  # Solid circle
+
+    # Draw the red dot on the image
+    cv2.circle(image, position, radius, color, thickness)
+    return image
+
+
+def empty_block(np_frame: ndarray) -> ndarray:
+    pass
+
+
+frame_times = deque(maxlen=120)
+
+
+def draw_block_perf(
         frame_event: VideoFrameEvent,
         output_source: rtc.VideoSource,
+        block: Callable[[ndarray], ndarray] = empty_block
 ):
     buffer: VideoFrame = frame_event.frame
-    np_frame = np.frombuffer(buffer.data, dtype=np.uint8)
+    np_frame: ndarray = np.frombuffer(buffer.data, dtype=np.uint8)
     np_frame = np_frame.reshape((buffer.height, buffer.width, 3))
 
     start_time = time.perf_counter()
 
-    # TODO: something...
+    # Call block
+    new_frame = block(np_frame)
 
     end_time = time.perf_counter()
-    from control_room.toolkit_object_detect import draw_perf
-    draw_perf_bkg(np_frame, 0, end_time - start_time)
+
+    # Calculate FPS
+    frame_times.append(end_time)
+    if len(frame_times) > 1:
+        fps = len(frame_times) / (frame_times[-1] - frame_times[0])
+    else:
+        fps = 0.0
+
+    draw_perf_bkg(new_frame, fps, end_time - start_time)
     frame = rtc.VideoFrame(
-        # 640, 480,
         buffer.width, buffer.height,
         rtc.VideoBufferType.RGB24,
-        np_frame.data
+        new_frame.data
     )
     output_source.capture_frame(frame)
+

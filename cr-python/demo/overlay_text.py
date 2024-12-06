@@ -16,6 +16,7 @@ WIDTH, HEIGHT = 1024, 768
 
 tasks = set()
 
+# TODO: import the changes made for the waterloo devfest that are under ks-models.
 async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.VideoSource):
     draw_foo(frame_event, output_source)
 

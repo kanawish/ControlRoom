@@ -1,50 +1,17 @@
 from typing import Callable
 
 import cv2
-import mediapipe as mp
 import numpy as np
-from mediapipe import Image
-from mediapipe.tasks import python
-from mediapipe.tasks.python.components.containers import detections
-from mediapipe.tasks.python.vision.object_detector import ObjectDetectorResult
-
-BaseOptions = mp.tasks.BaseOptions
-DetectionResult = mp.tasks.components.containers.DetectionResult
-ObjectDetector = mp.tasks.vision.ObjectDetector
-ObjectDetectorOptions = mp.tasks.vision.ObjectDetectorOptions
-VisionRunningMode = mp.tasks.vision.RunningMode
 
 
-def print_result(result: DetectionResult, output_image: mp.Image, timestamp_ms: int):
-    print('detection result: {}'.format(result))
-
-
-def default_queued_options(model_path: str) -> ObjectDetectorOptions:
-    return ObjectDetectorOptions(
-        base_options=BaseOptions(model_asset_path=model_path),
-        running_mode=VisionRunningMode.IMAGE,
-        max_results=5)
-
-
-def default_live_stream_options(
-        model_path: str,
-        result_callback: Callable[
-            [ObjectDetectorResult, Image, int], None] = print_result) -> ObjectDetectorOptions:
-    return ObjectDetectorOptions(
-        base_options=BaseOptions(model_asset_path=model_path),
-        running_mode=VisionRunningMode.LIVE_STREAM,
-        max_results=5,
-        result_callback=result_callback)
-
-
-MARGIN = 12  # pixel
+MARGIN = 10  # pixel
 ROW_SIZE = 16  # pixels
 FONT_SIZE = 1
 FONT_THICKNESS = 1
 TEXT_COLOR = (255, 0, 0)  # red
 F = 2
 
-# TODO: Move this to a generic module/file.
+
 def draw_perf(image: np.ndarray, fps: float, latency: float) -> np.ndarray:
     height, width = image.shape[:2]
 
@@ -63,28 +30,30 @@ def draw_perf(image: np.ndarray, fps: float, latency: float) -> np.ndarray:
 
     return image
 
+
 def draw_perf_bkg(image: np.ndarray, fps: float, latency: float) -> np.ndarray:
     height, width = image.shape[:2]
 
     # Define text locations
-    fps_loc = (int(MARGIN + (width / 2)), MARGIN + ROW_SIZE * F)
-    latency_loc = (int(MARGIN + (width / 2)), MARGIN + ROW_SIZE * F * 3)
-    wh_loc = (int(MARGIN + (width / 2)), MARGIN + ROW_SIZE * F * 2)
+    top = height - pos_y(4)
+    fps_loc = (pos_x(width), top + pos_y(1))
+    latency_loc = (pos_x(width), top + pos_y(3))
+    wh_loc = (pos_x(width), top + pos_y(2))
 
     # Define text strings
-    fps_text = f"FPS: {fps}"
+    fps_text = f"FPS: {fps:.2f}"
     latency_text = f"LATENCY: {latency:.4f}"
     wh_text = f"[{width},{height}]"
 
     # Function to draw text with background
-    def draw_text_with_bg(image, text, loc):
+    def draw_text_with_bg(bkg_image, text, loc):
         (text_w, text_h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_PLAIN, FONT_SIZE * F, FONT_THICKNESS * F)
         bg_rect_start = (loc[0] - 5, loc[1] - text_h - 5)
         bg_rect_end = (loc[0] + text_w + 5, loc[1] + 5)
-        overlay = image.copy()
+        overlay = bkg_image.copy()
         cv2.rectangle(overlay, bg_rect_start, bg_rect_end, (0, 0, 0), -1)
-        cv2.addWeighted(overlay, 0.5, image, 0.5, 0, image)
-        cv2.putText(image, text, loc, cv2.FONT_HERSHEY_PLAIN, FONT_SIZE * F, (0, 255, 0), FONT_THICKNESS * F)
+        cv2.addWeighted(overlay, 0.5, bkg_image, 0.5, 0, bkg_image)
+        cv2.putText(bkg_image, text, loc, cv2.FONT_HERSHEY_PLAIN, FONT_SIZE * F, (0, 255, 0), FONT_THICKNESS * F)
 
     # Draw texts with background
     draw_text_with_bg(image, fps_text, fps_loc)
@@ -92,6 +61,15 @@ def draw_perf_bkg(image: np.ndarray, fps: float, latency: float) -> np.ndarray:
     draw_text_with_bg(image, wh_text, wh_loc)
 
     return image
+
+
+def pos_x(width):
+    return int(MARGIN)
+
+
+def pos_y(line_num=4):
+    return MARGIN + ROW_SIZE * F * line_num
+
 
 def visualize(
         image,

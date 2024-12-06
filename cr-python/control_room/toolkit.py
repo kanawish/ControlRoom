@@ -4,31 +4,35 @@ import logging
 import os
 import time
 from asyncio import Queue
+from aiohttp import ClientSession
 from signal import SIGINT, SIGTERM
 from typing import Callable, Awaitable, Optional
 
 import cv2
 import numpy as np
 from livekit import api, rtc
-from livekit.rtc import VideoFrameEvent, VideoFrame
-
+from livekit.rtc import VideoFrameEvent, VideoFrame, AudioFrameEvent, AudioFrame, AudioStream
+from livekit.agents.stt import SpeechEventType, SpeechEvent, SpeechStream
+from livekit.plugins import deepgram
 
 def build_recoder(filename, fps=20.0, resolution=(640, 480)) -> cv2.VideoWriter:
-    fourcc = cv2.VideoWriter.fourcc(*'MP4V')
+    fourcc = cv2.VideoWriter.fourcc(*"MP4V")
     return cv2.VideoWriter(f"{filename}.mp4v", fourcc, fps, resolution)
 
 
 class Config:
-    def __init__(self,
-                 target_room_name,
-                 livekit_url,
-                 livekit_api_key,
-                 livekit_api_secret,
-                 eleven_api_key,
-                 deepgram_api_key,
-                 openai_api_key,
-                 output_width,
-                 output_height):
+    def __init__(
+            self,
+            target_room_name,
+            livekit_url,
+            livekit_api_key,
+            livekit_api_secret,
+            eleven_api_key,
+            deepgram_api_key,
+            openai_api_key,
+            output_width,
+            output_height,
+    ):
         self.TARGET_ROOM_NAME = target_room_name
         self.LIVEKIT_URL = livekit_url
         self.LIVEKIT_API_KEY = livekit_api_key
@@ -40,22 +44,27 @@ class Config:
         self.OUTPUT_HEIGHT = output_height
 
 
-def load_config(config_json='config.json'):
-    with open(config_json, 'r') as file:
+def load_config(config_json="config.json"):
+    with open(config_json, "r") as file:
         data = json.load(file)
         config = Config(**data)
-        os.environ['LIVEKIT_API_KEY'] = config.LIVEKIT_API_KEY
-        os.environ['LIVEKIT_API_SECRET'] = config.LIVEKIT_API_SECRET
-        os.environ['LIVEKIT_URL'] = config.LIVEKIT_URL
-        os.environ['TARGET_ROOM_NAME'] = config.TARGET_ROOM_NAME
-        os.environ['OUTPUT_WIDTH'] = config.OUTPUT_WIDTH
-        os.environ['OUTPUT_HEIGHT'] = config.OUTPUT_HEIGHT
+        os.environ["LIVEKIT_API_KEY"] = config.LIVEKIT_API_KEY
+        os.environ["LIVEKIT_API_SECRET"] = config.LIVEKIT_API_SECRET
+        os.environ["LIVEKIT_URL"] = config.LIVEKIT_URL
+        os.environ["TARGET_ROOM_NAME"] = config.TARGET_ROOM_NAME
+        os.environ["OUTPUT_WIDTH"] = config.OUTPUT_WIDTH
+        os.environ["OUTPUT_HEIGHT"] = config.OUTPUT_HEIGHT
+        os.environ["OPENAI_API_KEY"] = config.OPENAI_API_KEY
+        os.environ["DEEPGRAM_API_KEY"] = config.DEEPGRAM_API_KEY
+        os.environ["ELEVEN_API_KEY"] = config.ELEVEN_API_KEY
 
         return config
 
 
 async def create_room(config: Config):
-    lk_api = api.LiveKitAPI(config.LIVEKIT_URL, config.LIVEKIT_API_KEY, config.LIVEKIT_API_SECRET)
+    lk_api = api.LiveKitAPI(
+        config.LIVEKIT_URL, config.LIVEKIT_API_KEY, config.LIVEKIT_API_SECRET
+    )
     room_info = await lk_api.room.create_room(
         api.CreateRoomRequest(name=config.TARGET_ROOM_NAME),
     )
@@ -69,28 +78,35 @@ def log_room_activity(room: rtc.Room):
     @room.on("participant_connected")
     def on_participant_connected(participant: rtc.RemoteParticipant):
         logging.info(
-            "participant connected: %s %s", participant.sid, participant.identity)
+            "participant connected: %s %s", participant.sid, participant.identity
+        )
 
     @room.on("participant_disconnected")
     def on_participant_disconnected(participant: rtc.RemoteParticipant):
         logging.info(
-            "participant disconnected: %s %s", participant.sid, participant.identity)
+            "participant disconnected: %s %s", participant.sid, participant.identity
+        )
 
     # track_subscribed is emitted whenever the local participant is subscribed to a new track
     @room.on("track_subscribed")
-    def on_track_subscribed(track: rtc.Track, publication: rtc.RemoteTrackPublication,
-                            participant: rtc.RemoteParticipant):
+    def on_track_subscribed(
+            track: rtc.Track,
+            publication: rtc.RemoteTrackPublication,
+            participant: rtc.RemoteParticipant,
+    ):
         logging.info("track subscribed: %s pub: %s", track.sid, publication.sid)
 
     @room.on("track_unsubscribed")
-    def on_track_unsubscribed(track: rtc.Track, publication: rtc.RemoteTrackPublication,
-                              participant: rtc.RemoteParticipant):
+    def on_track_unsubscribed(
+            track: rtc.Track,
+            publication: rtc.RemoteTrackPublication,
+            participant: rtc.RemoteParticipant,
+    ):
         logging.info("track unsubscribed: %s pub: %s", track.sid, publication.sid)
 
 
 async def producer(
-        queue: asyncio.Queue[Optional[VideoFrameEvent]],
-        input_stream: rtc.VideoStream
+        queue: asyncio.Queue[Optional[VideoFrameEvent]], input_stream: rtc.VideoStream
 ):
     """
     Asynchronously produce frames from the input_stream
@@ -117,7 +133,7 @@ async def producer(
 async def consumer(
         queue: asyncio.Queue[Optional[VideoFrameEvent]],
         output_source: rtc.VideoSource,
-        handle_frame: Callable[[VideoFrameEvent, rtc.VideoSource], Awaitable[None]]
+        handle_frame: Callable[[VideoFrameEvent, rtc.VideoSource], Awaitable[None]],
 ):
     """
     Asynchronously consume frames from the queue
@@ -143,11 +159,77 @@ async def consumer(
         logging.info("frame_event consumer Task cancelled")
 
 
+async def audio_to_text_looper(
+        room: rtc.Room,
+        lk_id: str,
+        lk_name: str,
+        handle_audio: Callable[[AudioFrameEvent], Awaitable[None]]
+):
+
+    log_room_activity(room)
+    stt = deepgram.STT(http_session=ClientSession())
+    stt_stream = stt.stream()
+
+    async def listen(stt_stream: SpeechStream):
+        async for event in stt_stream:
+            if event.type == SpeechEventType.FINAL_TRANSCRIPT:
+                text = event.alternatives[0].text
+                await handle_audio(text)
+                logging.info(f"🔊 {text}")
+                # Do something with text
+            elif event.type == SpeechEventType.INTERIM_TRANSCRIPT:
+                pass
+            elif event.type == SpeechEventType.START_OF_SPEECH:
+                pass
+            elif event.type == SpeechEventType.END_OF_SPEECH:
+                pass
+
+
+    async def audio_to_text(track: rtc.Track):
+        audio_stream = rtc.AudioStream(track)
+
+        asyncio.ensure_future(listen(stt_stream))
+
+        async for ev in audio_stream:
+            stt_stream.push_frame(ev.frame)
+
+        stt_stream.end_input()
+
+
+    @room.on("track_subscribed")
+    def on_track_subscribed(subscribed_track: rtc.Track, *_):
+        logging.info(f"🛤 on_track_subscribed('{subscribed_track.sid}')")
+        if subscribed_track.kind == rtc.TrackKind.KIND_AUDIO:
+
+            #asyncio.create_task(audio_to_text(subscribed_track))
+
+            asyncio.ensure_future(audio_to_text(subscribed_track))
+
+
+    @room.on("track_unsubscribed")
+    def on_track_unsubscribed(unsubscribed_track: rtc.Track, *_):
+        logging.info(f"🛤 on_track_unsubscribed({unsubscribed_track.name})")
+
+    token = (
+        api.AccessToken()
+        .with_identity(lk_id)
+        .with_name(lk_name)
+        .with_grants(
+            api.VideoGrants(
+                room_join=True,
+                room=os.getenv("TARGET_ROOM_NAME"),
+            )
+        )
+    )
+    await room.connect(os.getenv("LIVEKIT_URL"), token.to_jwt())
+    logging.info(f"connected to room: {room.name}")
+
+
 async def first_track_queued_frame_looper(
         room: rtc.Room,
         lk_id: str,
         lk_name: str,
-        handle_frame: Callable[[VideoFrameEvent, rtc.VideoSource], Awaitable[None]]
+        handle_frame: Callable[[VideoFrameEvent, rtc.VideoSource], Awaitable[None]],
 ):
     """
     A main loop that listens for first subscribed KIND_VIDEO track,
@@ -185,14 +267,20 @@ async def first_track_queued_frame_looper(
                 # only process the first stream received
                 return
 
-            logging.info(f"🥇🛤️ {subscribed_track.sid} is the first received video track.")
-            input_video_stream = rtc.VideoStream(subscribed_track, format=rtc.VideoBufferType.RGB24)
+            logging.info(
+                f"🥇🛤️ {subscribed_track.sid} is the first received video track."
+            )
+            input_video_stream = rtc.VideoStream(
+                subscribed_track, format=rtc.VideoBufferType.RGB24
+            )
             queue: Queue[Optional[VideoFrameEvent]] = asyncio.Queue(maxsize=1)
 
             # Approach 1, the 'cancel reaction'
             producer_task = asyncio.create_task(producer(queue, input_video_stream))
             tasks.add(producer_task)
-            consumer_task = asyncio.create_task(consumer(queue, output_source, handle_frame))
+            consumer_task = asyncio.create_task(
+                consumer(queue, output_source, handle_frame)
+            )
             tasks.add(consumer_task)
 
             def done_handler(t):
@@ -222,7 +310,9 @@ async def first_track_queued_frame_looper(
     await room.connect(os.getenv("LIVEKIT_URL"), token.to_jwt())
     logging.info(f"connected to room: {room.name}")
 
-    publication = await room.local_participant.publish_track(output_track, output_track_options)
+    publication = await room.local_participant.publish_track(
+        output_track, output_track_options
+    )
     logging.info(f"published track {publication.sid}")
 
 
