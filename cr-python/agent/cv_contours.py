@@ -29,16 +29,6 @@ def detect_shape(contour):
     return shape
 
 
-def create_windows(num) -> list[str]:
-    names: list[str] = []
-    for i in range(num):
-        name = f'window_{i + 1}'
-        cv2.namedWindow(name)
-        cv2.moveWindow(name, 200 * i, 0)
-        names.append(name)
-    return names
-
-
 async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.VideoSource):
     buffer: VideoFrame = frame_event.frame
     arr = np.frombuffer(buffer.data, dtype=np.uint8)
@@ -61,7 +51,6 @@ async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.Vi
     for contour in contours:
         cv2.drawContours(dest_image, [contour], -1, (0, 255, 0), 2)
         # cv2.putText(dest_image, shape, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        # cv2.imshow(windows[4], dest_image)
 
     frame = rtc.VideoFrame(
         buffer.width,
@@ -75,24 +64,17 @@ async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.Vi
     )
     output_source.capture_frame(frame)
 
-    cv2.waitKey(1)
-
 
 # TODO: Get rid of top level preview stuff.
 logging.basicConfig(level=logging.INFO)
 loaded_config = load_config()
 
-# windows = create_windows(5)
-# cv2.startWindowThread()
-
 if __name__ == "__main__":
     async def main(room: rtc.Room):
         return await first_track_queued_frame_looper(
             room=room,
-            lk_id="foo",
-            lk_name="foobar",
+            lk_id="cv_contours",
+            lk_name="Open CV Contour",
             handle_frame=handle_frame_event)
 
-
     loop_on(main)
-    # cv2.destroyAllWindows()

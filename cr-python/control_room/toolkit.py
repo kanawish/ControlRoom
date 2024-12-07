@@ -210,6 +210,12 @@ async def audio_to_text_looper(
     def on_track_unsubscribed(unsubscribed_track: rtc.Track, *_):
         logging.info(f"🛤 on_track_unsubscribed({unsubscribed_track.name})")
 
+    token = build_token(lk_id, lk_name)
+    await room.connect(os.getenv("LIVEKIT_URL"), token.to_jwt())
+    logging.info(f"connected to room: {room.name}")
+
+
+def build_token(lk_id, lk_name):
     token = (
         api.AccessToken()
         .with_identity(lk_id)
@@ -221,8 +227,7 @@ async def audio_to_text_looper(
             )
         )
     )
-    await room.connect(os.getenv("LIVEKIT_URL"), token.to_jwt())
-    logging.info(f"connected to room: {room.name}")
+    return token
 
 
 async def first_track_queued_frame_looper(
@@ -244,7 +249,7 @@ async def first_track_queued_frame_looper(
     """
     width: int = int(os.getenv("OUTPUT_WIDTH")) or 1024
     height: int = int(os.getenv("OUTPUT_HEIGHT")) or 768
-    logging.info(f"called foo_main({room.name}) [{width}x{height}]")
+    logging.info(f"called first_track_queued_frame_looper({room.name}) [{width}x{height}]")
     input_video_stream = None
 
     log_room_activity(room)
@@ -296,17 +301,18 @@ async def first_track_queued_frame_looper(
         def on_track_unsubscribed(unsubscribed_track: rtc.Track, *_):
             logging.info(f"🛤 on_track_unsubscribed({unsubscribed_track.name})")
 
-    token = (
-        api.AccessToken()
-        .with_identity(lk_id)
-        .with_name(lk_name)
-        .with_grants(
-            api.VideoGrants(
-                room_join=True,
-                room=os.getenv("TARGET_ROOM_NAME"),
-            )
-        )
-    )
+    token = build_token(lk_id, lk_name)
+    # token = (
+    #     api.AccessToken()
+    #     .with_identity(lk_id)
+    #     .with_name(lk_name)
+    #     .with_grants(
+    #         api.VideoGrants(
+    #             room_join=True,
+    #             room=os.getenv("TARGET_ROOM_NAME"),
+    #         )
+    #     )
+    # )
     await room.connect(os.getenv("LIVEKIT_URL"), token.to_jwt())
     logging.info(f"connected to room: {room.name}")
 

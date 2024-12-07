@@ -21,9 +21,10 @@ object ServerInfo {
     // https://github.com/livekit-examples/livestream-mobile-backend
 //    val API_SERVER_URL = "https://livestream.livekit.io"
 //    val API_SERVER_URL = "http://192.168.50.240"
+    val API_SERVER_URL = "http://10.168.56.163:3000" // 100 génies
+//    val API_SERVER_URL = "http://192.168.140.48:3000" // 100 génies
 //    val API_SERVER_URL = "http://192.168.50.184:3000" // When using physical device
 //    val API_SERVER_URL = "http://192.168.8.247:3000" // When using physical device
 //    val API_SERVER_URL = "http://10.0.2.2:3000" // When using emulator
-    val API_SERVER_URL = "http://192.168.8.230:3000" // With AR300M
-
+//    val API_SERVER_URL = "http://192.168.8.230:3000" // With AR300M
 }

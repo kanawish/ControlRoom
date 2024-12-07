@@ -6,46 +6,30 @@ from livekit import rtc
 from livekit.rtc import VideoFrame
 from livekit.rtc import VideoFrameEvent
 
-from numpy import ndarray, dtype, unsignedinteger
+from numpy import ndarray
 
 from typing import Any
 from typing import Callable
 
-import asyncio
 import colorsys
 import cv2
 import numpy as np
 import time
 
 
-async def draw_color_cycle(output_source: rtc.VideoSource, width, height):
-    argb_frame = bytearray(width * height * 4)
-    arr = np.frombuffer(argb_frame, dtype=np.uint8)
+def draw_img_rect_info(win_name: str, bgr_image: np.ndarray) -> None:
+    """Draw window rectangle information on the image.
+    
+    This function gets the window rectangle information for the given window name
+    and draws text showing the x, y coordinates and dimensions on the image.
 
-    framerate = 1 / 30
-    hue = 0.0
+    Args:
+        win_name (str): Name of the window to get rectangle info from
+        bgr_image (np.ndarray): BGR format image to draw text on (modified in-place)
 
-    while True:
-        start_time = asyncio.get_event_loop().time()
-
-        rgb = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
-        rgb = [(x * 255) for x in rgb]  # type: ignore
-
-        argb_color = np.array(rgb + [255], dtype=np.uint8)
-        arr.flat[::4] = argb_color[0]
-        arr.flat[1::4] = argb_color[1]
-        arr.flat[2::4] = argb_color[2]
-        arr.flat[3::4] = argb_color[3]
-
-        frame = rtc.VideoFrame(width, height, rtc.VideoBufferType.RGBA, argb_frame)
-        output_source.capture_frame(frame)
-        hue = (hue + framerate / 3) % 1.0
-
-        code_duration = asyncio.get_event_loop().time() - start_time
-        await asyncio.sleep(1 / 30 - code_duration)
-
-
-def draw_img_rect_info(win_name: str, bgr_image):
+    Returns:
+        None: The image is modified in-place
+    """
     rect = cv2.getWindowImageRect(win_name)
 
     # Define the text and its properties
@@ -59,51 +43,100 @@ def draw_img_rect_info(win_name: str, bgr_image):
     # Draw the text on the image
     cv2.putText(bgr_image, text, org, font_face, font_scale, color, thickness, line_type)
 
-
-# Initialize a deque to store timestamps of the last few frames
 def draw_red_dot(image: np.ndarray) -> np.ndarray:
-    # Define the position and color of the dot
+    """Draw a solid red dot in the top-left corner of the image.
+    
+    Args:
+        image (np.ndarray): Input image to draw on (BGR format)
+        
+    Returns:
+        np.ndarray: Image with red dot drawn on it
+        
+    The dot is drawn at position (10,10) with radius 5 pixels as a solid red circle.
+    The input image is modified in-place but also returned.
+    """
     position = (10, 10)  # Top-left corner
     color = (255, 0, 0)  # Red color in BGR
     radius = 5
     thickness = -1  # Solid circle
 
-    # Draw the red dot on the image
     cv2.circle(image, position, radius, color, thickness)
     return image
+
+
+def draw_color_cycle(np_frame: ndarray) -> ndarray:
+    import math
+    import time
+    
+    # Calculate hue using sine wave oscillating between 0 and 1
+    # Time-based animation creates smooth color cycling
+    # Divide time by 5 to slow down the cycle by 5x
+    hue = (math.sin(time.time() / 5) + 1) / 2
+
+    # Convert HSV to RGB
+    rgb = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+    rgb = [int(x * 255) for x in rgb]  # Convert to 0-255 range
+
+    # Fill entire frame with the RGB color
+    # np_frame[:, :] = rgb
+
+    # Instead, overlay RGB color with alpha blending
+    alpha = 0.5  # 50% transparency
+    overlay = np.full_like(np_frame, rgb)
+    cv2.addWeighted(overlay, alpha, np_frame, 1 - alpha, 0, np_frame)
+
+    return np_frame
 
 
 def empty_block(np_frame: ndarray) -> ndarray:
     pass
 
 
-frame_times = deque(maxlen=120)
+class PerfDecorator:
+    def __init__(self, block: Callable[[ndarray], ndarray]):
+        """Initialize decorator with a rendering block and its own frame times queue.
+        
+        Args:
+            block: Function that takes and returns a numpy array representing an image.
+        """
+        self.block = block
+        self.frame_times = deque(maxlen=120)
+        
+    def __call__(self, np_frame: ndarray) -> ndarray:
+        start_time = time.perf_counter()
+        # Call block
+        new_frame = self.block(np_frame)
+        end_time = time.perf_counter()
+        # Calculate FPS
+        self.frame_times.append(end_time)
+        if len(self.frame_times) > 1:
+            fps = len(self.frame_times) / (self.frame_times[-1] - self.frame_times[0])
+        else:
+            fps = 0.0
+        return draw_perf_bkg(new_frame, fps, end_time - start_time)
 
 
-def draw_block_perf(
+def draw_on_frame(
         frame_event: VideoFrameEvent,
         output_source: rtc.VideoSource,
         block: Callable[[ndarray], ndarray] = empty_block
 ):
+    """Takes a VideoFrameEvent containing a frame, applies the provided rendering block function,
+    and outputs the result.
+
+    Args:
+        frame_event: VideoFrameEvent containing the input frame
+        output_source: VideoSource to output the processed frame to
+        block: Function that takes and returns a numpy array representing an image.
+              Defaults to empty_block which makes no changes.
+    """
     buffer: VideoFrame = frame_event.frame
     np_frame: ndarray = np.frombuffer(buffer.data, dtype=np.uint8)
     np_frame = np_frame.reshape((buffer.height, buffer.width, 3))
 
-    start_time = time.perf_counter()
-
     # Call block
     new_frame = block(np_frame)
 
-    end_time = time.perf_counter()
-
-    # Calculate FPS
-    frame_times.append(end_time)
-    if len(frame_times) > 1:
-        fps = len(frame_times) / (frame_times[-1] - frame_times[0])
-    else:
-        fps = 0.0
-
-    draw_perf_bkg(new_frame, fps, end_time - start_time)
     frame = rtc.VideoFrame(
         buffer.width, buffer.height,
         rtc.VideoBufferType.RGB24,
