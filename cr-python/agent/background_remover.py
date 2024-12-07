@@ -16,7 +16,7 @@ from torchvision import transforms
 from transformers import AutoModelForImageSegmentation
 
 from control_room.toolkit import load_config, loop_on, first_track_queued_frame_looper
-from control_room.toolkit_draw import draw_block_perf, draw_red_dot
+from control_room.toolkit_draw import draw_on_frame, draw_red_dot
 
 logging.basicConfig(level=logging.INFO)
 
@@ -115,7 +115,7 @@ def frame_processor(input_frame: np.ndarray) -> np.ndarray:
 
 async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.VideoSource):
     # TODO: check this works..
-    draw_block_perf(frame_event, output_source, frame_processor)
+    draw_on_frame(frame_event, output_source, frame_processor)
 
 
 if __name__ == "__main__":
