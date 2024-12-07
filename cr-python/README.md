@@ -4,6 +4,9 @@ A python environment folder, not part of the main project modules.
 
 https://docs.livekit.io/agents/
 
+- ``
+- `demo`
+
 ## Setup
 
 Create a virtual python environment in the `venv` folder.

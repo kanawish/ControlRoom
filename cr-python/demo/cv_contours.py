@@ -59,8 +59,8 @@ async def handle_frame_event(frame_event: VideoFrameEvent, output_source: rtc.Vi
         # TODO: Demo the different filters.
         # cv2.cvtColor(gray, cv2.COLOR_BGR2RGB).data
         # cv2.cvtColor(blurred, cv2.COLOR_BGR2RGB).data
-        cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB).data
-        # cv2.cvtColor(dest_image, cv2.COLOR_BGR2RGB).data
+        # cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB).data
+        cv2.cvtColor(dest_image, cv2.COLOR_BGR2RGB).data
     )
     output_source.capture_frame(frame)
 

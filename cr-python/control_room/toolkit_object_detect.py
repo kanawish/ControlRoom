@@ -13,6 +13,16 @@ F = 2
 
 
 def draw_perf(image: np.ndarray, fps: float, latency: float) -> np.ndarray:
+    """Draw performance metrics on the image.
+    
+    Args:
+        image: Input image to draw on (BGR format)
+        fps: Frames per second to display
+        latency: Latency in seconds to display
+        
+    Returns:
+        np.ndarray: Image with metrics drawn on it. The input image is modified in-place.
+    """
     height, width = image.shape[:2]
 
     # height, width = image.shape[:2]
@@ -30,8 +40,17 @@ def draw_perf(image: np.ndarray, fps: float, latency: float) -> np.ndarray:
 
     return image
 
-
 def draw_perf_bkg(image: np.ndarray, fps: float, latency: float) -> np.ndarray:
+    """Draw performance metrics with semi-transparent backgrounds on the image.
+    
+    Args:
+        image: Input image to draw on (BGR format)
+        fps: Frames per second to display
+        latency: Latency in seconds to display
+        
+    Returns:
+        np.ndarray: Image with metrics drawn on it. The input image is modified in-place.
+    """
     height, width = image.shape[:2]
 
     # Define text locations
@@ -61,7 +80,6 @@ def draw_perf_bkg(image: np.ndarray, fps: float, latency: float) -> np.ndarray:
     draw_text_with_bg(image, wh_text, wh_loc)
 
     return image
-
 
 def pos_x(width):
     return int(MARGIN)
